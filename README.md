@@ -1,44 +1,22 @@
 # BackEnd Flask Actualizado
 
-python3 -m venv .venv
+Crear venv 
 
+python3 -m venv .venv
 . .venv/bin/activate
 
-requeriments
-
-pip install Flask
-pip install SQLAlchemy
-pip install flask-SQLAlchemy
-pip install mysqlclient
-pip install pymysql
-pip install flask-marsmellow
-pip install marshmallow-sqlalchemy
-#
-
-from app import db
-db.create_all()
-
-
-<!-- 
-pip install python-decouple
-pip install pymysql
-pip install PyJWT
-pip install Flask-OAuthlib
-pip install flask-restplus
-pip install Flask-SQLAlchemy
-pip install Flask-Principal
-pip install Flask-Migrate
-
- -->
-
-
+instalar los requerimientos para que funcione la app:
 
 pip install -r requirements.txt
+
+pip freeze > requirements.txt
 
 python app.py
 
 
-```
-en el archivo config.py
-se debe crear las variables al usar 
-```
+### swagger API
+
+http://127.0.0.1:puerto/apidocs
+
+## NOTA :
+ Estare Actualizando esta app como una APIREST La parte del FronEnd sera desarrollada con NextJs 14

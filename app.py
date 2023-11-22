@@ -1,9 +1,10 @@
-from flask import Flask, request,jsonify, Blueprint, render_template
+from flask import Flask, request, jsonify, Blueprint, render_template , redirect, url_for
 from app.config.config import SECRET, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME  
 from app.db.db_init import create_tables
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from marshmallow import Schema, fields
+from flasgger import Swagger
 
 app = Flask(__name__ , template_folder='app/templates')
 
@@ -15,6 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 app.secret_key = SECRET
+swagger = Swagger(app)
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -101,36 +103,101 @@ class NotaSchema(Schema):
 
 
 
-# Ruta de inicio
 @app.route('/')
 def index():
-    return 'Hola!'
+    """
+    Documentación
+    """
+    return redirect(url_for('flasgger.apidocs'))
 
 # Registrrar
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['POST'])
 def register_user():
-    if request.method == 'POST':
-        data = request.form
+    """
+    Registra un nuevo usuario en la aplicación.
 
-        email = data.get('email')
-        password = data.get('password')
+    ---
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              example: user@example.com
+            password:
+              type: string
+              example: password123
+    responses:
+      200:
+        description: Usuario registrado con éxito
+      400:
+        description: Error en la solicitud (campos obligatorios faltantes o incorrectos)
+      409:
+        description: El correo ya está registrado
+    """
+    data = request.get_json()
 
-        if not email or not password:
-            return render_template('register.html', error='Todos los campos son obligatorios'), 400
+    email = data.get('email')
+    password = data.get('password')
 
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return render_template('register.html', error='El correo ya está registrado'), 400
-  
-        new_user = User(email=email, password=password)
+    if not email or not password:
+        return jsonify({'error': 'Todos los campos son obligatorios'}), 400
 
-        db.session.add(new_user)
-        db.session.commit()
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({'error': 'El correo ya está registrado'}), 409
 
-        return render_template('register.html', message='Usuario registrado con éxito')
+    new_user = User(email=email, password=password)
 
-    return render_template('register.html')
+    db.session.add(new_user)
+    db.session.commit()
 
+    return jsonify({'message': 'Usuario registrado con éxito'})
+
+#
+
+@app.route('/login', methods=['POST'])
+def login_user():
+    """
+    Inicia sesión en la aplicación.
+
+    ---
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              example: user@example.com
+            password:
+              type: string
+              example: password123
+    responses:
+      200:
+        description: Inicio de sesión exitoso
+      401:
+        description: Credenciales incorrectas
+    """
+    data = request.get_json()
+
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'error': 'Todos los campos son obligatorios'}), 400
+
+    existing_user = User.query.filter_by(email=email, password=password).first()
+    if existing_user:
+        return jsonify({'user_email': existing_user.email, 'message': 'Inicio de sesión exitoso'})
+
+    return jsonify({'error': 'Credenciales incorrectas'}), 401
+    
 
 if __name__ == '__main__':
     create_tables()
