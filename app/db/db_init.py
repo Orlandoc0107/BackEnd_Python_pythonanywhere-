@@ -1,6 +1,6 @@
 import pymysql
 from app.config.config import DB_HOST, DB_PORT, DB_PASSWORD, DB_NAME, DB_USER
-
+from werkzeug.security import generate_password_hash
 
 def connect():
     try:
@@ -40,59 +40,127 @@ def execute_query(connection, query, values=None):
         print("No hay conexión a la base de datos MySQL.")
     return None
 
-create_user_table = """
-CREATE TABLE IF NOT EXISTS user (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NULL,
-    first_name VARCHAR(255) NULL,
-    last_name VARCHAR(255) NULL,
-    age INT NULL,
-    email VARCHAR(255) UNIQUE, 
-    google_auth_id VARCHAR(255) UNIQUE, 
-    password VARCHAR(255) NULL,
-    profile_photo VARCHAR(255) NULL,
-    rol VARCHAR(255) NOT NULL -- Puede ser 'admin', 'teacher', 'student', 'candidate'
-);
+# Consulta de creación de tablas
+
+create_admin_table = """
+    CREATE TABLE IF NOT EXISTS admin (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        role INT DEFAULT '0',
+        user VARCHAR(255) NOT NULL,
+        email VARCHAR(255),
+        password VARCHAR(255) NOT NULL
+    );
 """
 
-create_course_table = """
-CREATE TABLE IF NOT EXISTS course (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    creation DATE,
-    administrador_id INT NULL,
-    teacher_id INT NULL,
-    student_id INT NULL
-);
+create_teacher_table = """
+    CREATE TABLE IF NOT EXISTS teacher (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        role INT DEFAULT '1',
+        username VARCHAR(255),
+        firstname VARCHAR(255),
+        lastname VARCHAR(255),
+        age INT,
+        dni VARCHAR(255),
+        email VARCHAR(255),
+        password VARCHAR(255),
+        paswordTeacher VARCHAR(255)
+    );
 """
 
-create_subject_table = """
-CREATE TABLE IF NOT EXISTS subject (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    total_notes INT NULL,
-    teacher_id INT NULL
-);
+create_stundent_table = """
+    CREATE TABLE IF NOT EXISTS student (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        role INT DEFAULT '2',
+        username VARCHAR(255),
+        firstname VARCHAR(255),
+        lastname VARCHAR(255),
+        age INT,
+        dni VARCHAR(255),
+        email VARCHAR(255),
+        password VARCHAR(255),
+        teacher_id INT,
+        FOREIGN KEY (teacher_id) REFERENCES teacher(id)
+    );
 """
 
-create_note_table = """
-CREATE TABLE IF NOT EXISTS note (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    subject_id INT NULL, -- Clave foránea a subjects (id)
-    student_id INT NULL, -- Clave foránea a users (id)
-    note INT -- Nota individual
-);
+create_candidate_table = '''
+    CREATE TABLE IF NOT EXISTS candidate (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        role INT DEFAULT '3',
+        username TEXT,
+        firstname TEXT,
+        lastname TEXT,
+        age INTEGER,
+        dni TEXT,
+        email TEXT,
+        password TEXT,
+        teacher_id INT,
+        FOREIGN KEY (teacher_id) REFERENCES teacher(id)
+    );
+'''
+
+create_subjects_table = """
+    CREATE TABLE IF NOT EXISTS subjects (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        math TEXT,
+        geography TEXT,
+        language TEXT,
+        english TEXT,
+        teacher_id INT,
+        student_id INT,
+        FOREIGN KEY (teacher_id) REFERENCES teacher(id),
+        FOREIGN KEY (student_id) REFERENCES student(id)
+    );
 """
+create_commissions_table = """
+    CREATE TABLE IF NOT EXISTS commissions(
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(255),
+        teacher_id INT,
+        student_id INT,
+        FOREIGN KEY (teacher_id) REFERENCES teacher(id),
+        FOREIGN KEY (student_id) REFERENCES student(id)
+    );
+"""
+
+def crear_administrador(connection):
+    query_check_admin_table = "SHOW TABLES LIKE 'admin'"
+    query_count_admins = "SELECT COUNT(*) FROM admin"
+    query_insert_admin = "INSERT INTO admin (user, password, email) VALUES (%s, %s, %s)"
+    
+    table_exists = execute_query(connection, query_check_admin_table)
+    
+    if not table_exists:
+        print("Tabla 'admin' no encontrada. Creando la tabla...")
+        print(create_admin_table) 
+        execute_query(connection, create_admin_table)
+        print("Tabla 'admin' creada.")
+    
+    count = execute_query(connection, query_count_admins)[0][0]
+    
+    if count == 0:
+        username = 'admin'
+        password_hash = generate_password_hash('admin')
+        email = 'admin@admin.com'
+        values = (username, password_hash, email)
+        execute_query(connection, query_insert_admin, values)
+        print("Administrador creado.")
+    else:
+        print("Ya existe un administrador en la base de datos.")
+
 
 def create_tables():
     connection = connect()
 
     if connection:
-        execute_query(connection, create_user_table)
-        execute_query(connection, create_course_table)
-        execute_query(connection, create_subject_table)
-        execute_query(connection, create_note_table)
-
+        execute_query(connection, create_admin_table)
+        execute_query(connection, create_teacher_table)
+        execute_query(connection, create_candidate_table)
+        execute_query(connection, create_stundent_table)
+        execute_query(connection, create_subjects_table)
+        execute_query(connection, create_commissions_table)
+        crear_administrador(connection)
+        
     disconnect(connection)
 
 create_tables()

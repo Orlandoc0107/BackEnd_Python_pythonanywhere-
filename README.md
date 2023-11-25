@@ -1,6 +1,6 @@
 # BackEnd Flask Actualizado
 
-Crear venv 
+Crear venv
 
 python3 -m venv .venv
 . .venv/bin/activate
@@ -13,10 +13,10 @@ pip freeze > requirements.txt
 
 python app.py
 
+## swagger API
 
-### swagger API
+`http://127.0.0.1:puerto/apidocs`
 
-http://127.0.0.1:puerto/apidocs
+### NOTA
 
-## NOTA :
- Estare Actualizando esta app como una APIREST La parte del FronEnd sera desarrollada con NextJs 14
+Estare Actualizando esta app como una APIREST La parte del FronEnd sera desarrollada con NextJs 14
