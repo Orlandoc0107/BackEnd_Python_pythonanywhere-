@@ -5,7 +5,9 @@ from flask_restx import Api
 
 app = Flask(__name__)
 app.config.from_object('app.config.config')
-app.secret_key = 'SECRET'
+
+if 'SECRET_KEY' not in app.config:
+    app.config['SECRET_KEY'] = 'tu_valor_por_defecto'
 
 api = init_app(app)
 

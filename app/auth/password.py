@@ -1,7 +1,6 @@
 from werkzeug.security import check_password_hash
 from app.db.db_init import connect ,disconnect
-from app.auth.jwt_utils import generate_token
-
+from app.auth.jwt import generate_token
 
 def check_password_admin(password, email):
     connection = connect()
