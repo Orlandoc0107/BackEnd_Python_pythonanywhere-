@@ -182,8 +182,27 @@ def listcommissions():
             print(f"Error al ejecutar la consulta: {str(e)}")
         finally:
             connection.close()
-
     return resultados_dict
+#####
+
+def roles(id_user, role_user):
+    try:
+        with connect() as connection:
+            query = "UPDATE candidate SET role = %s WHERE id = %s"
+            print(id_user)
+            print(role_user)
+            with connection.cursor() as cursor:
+                cursor.execute(query, (role_user, id_user))
+                connection.commit()
+                t_teacher = transferir_teacher()
+                t_studente = transferir_student()
+                clears = limpiar_candidatos()
+                return t_teacher, t_studente , clears
+    except pymysql.Error as e:
+        print(f"Error al actualizar el rol: {str(e)}")
+        return False  
+
+
 #####
 def email_exists(email):
     connection = connect()
@@ -222,3 +241,109 @@ def id_exists(email):
 
     disconnect(connection)
     return False
+
+##
+def transferir_teacher():
+    try:
+        connection = connect()
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM candidate WHERE role = 1")
+            profesor_records = cursor.fetchall()
+
+            for profesor in profesor_records:
+                id_profesor = profesor['id']
+                role_profesor = profesor['role']
+                username_profesor = profesor['username']
+                firstname_profesor = profesor['firstname']
+                lastname_profesor = profesor['lastname']
+                age_profesor = profesor['age']
+                dni_profesor = profesor['dni']
+                email_profesor = profesor['email']
+                password_profesor = profesor['password']
+
+                
+                cursor.execute("SELECT * FROM teacher WHERE email = %s", (email_profesor,))
+                existing_teacher = cursor.fetchone()
+
+                if not existing_teacher:
+                    
+                    cursor.execute(
+                        "INSERT INTO teacher (role, username, firstname, lastname, age, dni, email, password) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        (role_profesor, username_profesor, firstname_profesor, lastname_profesor, age_profesor, dni_profesor, email_profesor, password_profesor)
+                    )
+                else:
+                    print(f"El profesor con correo electrónico {email_profesor} ya existe en la tabla de profesores.")
+
+            connection.commit()
+
+        print('Profesores transferidos')
+
+    except pymysql.Error as e:
+        print(f"Error durante la transferencia de profesores: {str(e)}")
+
+    finally:
+        if connection:
+            connection.close()
+            
+def transferir_student():
+    try:
+        connection = connect()
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM candidate WHERE role = 2")
+            student_records = cursor.fetchall()
+            print(type(student_records))
+
+            for student in student_records:
+                id_student = student['id']
+                role_student = student['role']
+                username_student = student['username']
+                firstname_student = student['firstname']
+                lastname_student = student['lastname']
+                age_student = student['age']
+                dni_student = student['dni']
+                email_student = student['email']
+                password_student = student['password']
+
+                
+                cursor.execute("SELECT * FROM student WHERE email = %s", (email_student,))
+                existing_student = cursor.fetchone()
+
+                if not existing_student:
+                    
+                    
+                    cursor.execute(
+                        "INSERT INTO student (role, username, firstname, lastname, age, dni, email, password) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        (role_student, username_student, firstname_student, lastname_student, age_student, dni_student, email_student, password_student)
+                    )
+                else:
+                    print(f"El student con correo electrónico {email_student} ya existe en la tabla de student.")
+
+            connection.commit()
+
+        print('students transferidos')
+
+    except pymysql.Error as e:
+        print(f"Error durante la transferencia de student: {str(e)}")
+
+    finally:
+        if connection:
+            connection.close()
+            
+#
+def limpiar_candidatos(id):
+    try:
+        connection = connect()
+
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            # Eliminar candidato por ID
+            cursor.execute("DELETE FROM candidate WHERE id = %s", (id,))
+            connection.commit()
+
+        print(f"Candidato con ID {id} eliminado correctamente.")
+
+    except pymysql.Error as e:
+        print(f"Error al limpiar el registro del candidato: {str(e)}")
+
+    finally:
+        if connection:
+            connection.close()

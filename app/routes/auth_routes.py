@@ -3,7 +3,7 @@ from app.db.db_init import connect, disconnect, execute_query
 from flask_restx import Api, Resource
 from app.auth.jwt import generate_token
 from app.db.connection import (editadmin, email_exists, id_exists, listcandidate, liststudent,
-    listteacher, login_admin, listcommissions)
+    listteacher, login_admin, listcommissions, roles , limpiar_candidatos)
 from werkzeug.security import generate_password_hash
 from app.config.config import SECRET_KEY
 import jwt
@@ -66,13 +66,7 @@ class List(Resource):
         token = data.split()[1]
         try:
             payload = jwt.decode(token, key, algorithms='HS256')
-            id = payload.get('user_id')
             role = payload.get('role')
-            email = payload.get('email')
-            
-            user = request.args.get('user')
-            emai = request.args.get('email')
-            password = request.args.get('password')
 
             if role == 0:
                 resultados = listcandidate()
@@ -95,13 +89,7 @@ class List(Resource):
         token = data.split()[1]
         try:
             payload = jwt.decode(token, key, algorithms='HS256')
-            id = payload.get('user_id')
             role = payload.get('role')
-            email = payload.get('email')
-            
-            user = request.args.get('user')
-            emai = request.args.get('email')
-            password = request.args.get('password')
 
             if role == 0:
                 resultados = liststudent()
@@ -117,20 +105,40 @@ class List(Resource):
         except jwt.InvalidTokenError:
             return {'payload': None, 'error': 'Token Invalido'}
 #
-@namespace1.route('/teacher')
+@namespace1.route('/roles')
+class Roles(Resource):
+    def put(self):
+        data = request.headers.get('Authorization')
+        token = data.split()[1]
+        try:
+            payload = jwt.decode(token, key, algorithms='HS256')
+            role = payload.get('role')
+
+            if role == 0:
+                data = request.get_json()
+                id_user = data.get('id')
+                role_user = data.get('role')
+                if id_user:
+                    res= roles(id_user, role_user)
+                    return res
+                else:
+                    return {'message':'No existe la elusuario en la base de datos'}
+                    
+
+        except jwt.ExpiredSignatureError:
+            return {'payload': None, 'error': 'Token Expirado'}
+        except jwt.InvalidTokenError:
+            return {'payload': None, 'error': 'Token Invalido'}
+
+@namespace1.route('/teachers')
 class List(Resource):
     def get(self):
         data = request.headers.get('Authorization')
         token = data.split()[1]
         try:
             payload = jwt.decode(token, key, algorithms='HS256')
-            id = payload.get('user_id')
             role = payload.get('role')
-            email = payload.get('email')
             
-            user = request.args.get('user')
-            emai = request.args.get('email')
-            password = request.args.get('password')
 
             if role == 0:
                 resultados = listteacher()
@@ -153,14 +161,8 @@ class List(Resource):
         token = data.split()[1]
         try:
             payload = jwt.decode(token, key, algorithms='HS256')
-            id = payload.get('user_id')
             role = payload.get('role')
-            email = payload.get('email')
             
-            user = request.args.get('user')
-            emai = request.args.get('email')
-            password = request.args.get('password')
-
             if role == 0:
                 resultados = listcommissions()
 
@@ -174,6 +176,19 @@ class List(Resource):
             return {'payload': None, 'error': 'Token Expirado'}
         except jwt.InvalidTokenError:
             return {'payload': None, 'error': 'Token Invalido'}
+#
+@namespace1.route('/delete')
+class Delete(Resource):
+    def delete(self):
+        data = request.get_json()
+        id = data.get('id')
+        if id:
+            resp = limpiar_candidatos(id)
+            return resp
+        else:
+            return {'menssage':'No existe el usuario con esa id'}
+        
+
 #
 namespace2 = api.namespace('user', description='End Point Candidates')
 @namespace2.route('/register')

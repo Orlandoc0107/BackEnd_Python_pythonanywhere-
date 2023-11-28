@@ -19,4 +19,4 @@ python app.py
 
 ### NOTA
 
-Estare Actualizando esta app como una APIREST La parte del FronEnd sera desarrollada con NextJs 14
+Esto es un Demo el proyecto sera finalizado con otro Django
