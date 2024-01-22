@@ -1,11 +1,10 @@
 # config.py
 
-DB_USER = 'admin'
-DB_PASSWORD = '0123456789'
+DB_USER = 'root'
+DB_PASSWORD = ''
 DB_HOST = 'localhost'
 DB_PORT = 3306
 DB_NAME = 'admin'
-
 
 TEMPLATE_FOLDER = 'app/templates'
 
